@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>紓壓放鬆工作站 ☕ (含音效)</title>
+    <style>
+        /* === 基礎排版與樣式 === */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        h1 { color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); margin-bottom: 30px; text-align: center; width: 100%; }
+
+        .layout-container { display: flex; flex-direction: row; gap: 20px; width: 100%; max-width: 1200px; align-items: flex-start; }
+        .sidebar { width: 260px; display: flex; flex-direction: column; gap: 20px; }
+        .main-content { flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+
+        @media (max-width: 768px) {
+            .layout-container { flex-direction: column; align-items: center; }
+            .sidebar { width: 100%; max-width: 400px; }
+        }
+
+        .card { background: rgba(255, 255, 255, 0.9); border-radius: 15px; padding: 20px; box-shadow: 0 8px 16px rgba(0,0,0,0.1); text-align: center; backdrop-filter: blur(5px); }
+        .card h2 { margin-top: 0; color: #444; border-bottom: 2px solid #eee; padding-bottom: 10px; font-size: 18px;}
+
+        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; margin: 5px; transition: transform 0.1s, background-color 0.2s; }
+        button:active { transform: scale(0.95); }
+        button:disabled { background-color: #ccc !important; cursor: not-allowed; transform: none; }
+
+        /* === 側邊欄小遊戲樣式 === */
+        .sidebar-btn { width: 100%; background-color: #6c5ce7; color: white; }
+        .sidebar-btn:hover { background-color: #5b4bc4; }
+        .dice-display { font-size: 50px; margin: 10px 0; transition: transform 0.3s ease; }
+        .coin-display { font-size: 24px; font-weight: bold; margin: 15px 0; color: #d63031; height: 30px; }
+        
+        .breathe-circle {
+            width: 80px; height: 80px;
+            background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: bold; margin: 30px auto;
+            animation: breathe 8s infinite ease-in-out;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        @keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.6); } }
+
+        /* === 右側主功能樣式 === */
+        #target-btn { background-color: #007bff; color: white; width: 80%; padding: 15px; font-size: 18px; }
+        #start-btn { background-color: #28a745; color: white; }
+        #stop-btn { background-color: #dc3545; color: white; }
+        input[type="number"] { padding: 8px; width: 70px; border-radius: 5px; border: 1px solid #ccc; text-align: center; }
+
+        .bubble-container { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin: 15px 0; justify-items: center; }
+        .bubble { width: 40px; height: 40px; background: radial-gradient(circle at 30% 30%, #ffffff, #87ceeb); border-radius: 50%; cursor: pointer; box-shadow: 2px 2px 5px rgba(0,0,0,0.2), inset -2px -2px 5px rgba(0,0,0,0.1); transition: all 0.1s; }
+        .bubble.popped { background: #e0e0e0; box-shadow: inset 2px 2px 5px rgba(0,0,0,0.2); transform: scale(0.9); cursor: default; }
+        #reset-bubble { background-color: #17a2b8; color: white; }
+
+        .game-area { position: relative; width: 100%; height: 200px; background-color: #ffeaea; border: 2px dashed #ffb3b3; border-radius: 10px; overflow: hidden; margin-top: 15px; cursor: crosshair; }
+        #bad-mood { position: absolute; font-size: 40px; user-select: none; cursor: pointer; transition: top 0.3s, left 0.3s; }
+        .score-board { font-size: 18px; font-weight: bold; color: #d63031; }
+
+    </style>
+</head>
+<body>
+
+    <h1>☕ 紓壓放鬆工作站 (音效版)</h1>
+    <p style="color: #fff; text-align: center; margin-top: -20px; margin-bottom: 20px;">💡 請先點擊畫面任一處，以允許瀏覽器播放音效</p>
+
+    <div class="layout-container">
+        <aside class="sidebar">
+            <div class="card">
+                <h2>🎲 幸運骰子</h2>
+                <div class="dice-display" id="dice-result">⚀</div>
+                <button class="sidebar-btn" id="dice-btn">擲骰子</button>
+            </div>
+            <div class="card">
+                <h2>🪙 拋硬幣決定</h2>
+                <div class="coin-display" id="coin-result">準備...</div>
+                <button class="sidebar-btn" id="coin-btn">拋出硬幣</button>
+            </div>
+            <div class="card">
+                <h2>🧘 跟著呼吸</h2>
+                <div style="font-size: 12px; color: #666;">變大時吸氣，變小時吐氣</div>
+                <div class="breathe-circle">放鬆</div>
+            </div>
+        </aside>
+
+        <main class="main-content">
+            <div class="card">
+                <h2>⚙️ 連點測試台</h2>
+                <p>點擊次數: <span id="click-count" style="font-size: 24px; color: #007bff; font-weight: bold;">0</span></p>
+                <button id="target-btn">點擊我！</button>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
+                <div><label>間隔 (毫秒): <input type="number" id="interval" value="50" min="10" step="10"></label></div>
+                <div style="margin-top: 10px;">
+                    <button id="start-btn">開始連點</button>
+                    <button id="stop-btn" disabled>停止</button>
+                </div>
+                <div id="status-text" style="margin-top: 10px; color: #888; font-size: 14px;">狀態: ⏹ 停止中</div>
+            </div>
+
+            <div class="card">
+                <h2>🫧 虛擬氣泡紙</h2>
+                <div class="bubble-container" id="bubble-wrap"></div>
+                <button id="reset-bubble">🔄 換一張新的</button>
+            </div>
+
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2>💢 壞心情消除器</h2>
+                <div class="score-board">消滅次數: <span id="score">0</span></div>
+                <div class="game-area" id="game-area">
+                    <div id="bad-mood">😡</div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // ==========================================
+        // 🌟 Web Audio API 音效合成引擎
+        // ==========================================
+        let audioCtx;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+        }
+
+        // 1. 氣泡紙：清脆高音的「啵」
+        function playPopSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.1);
+            gain.gain.setValueAtTime(0.5, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.1);
+        }
+
+        // 2. 打擊壞心情：低沉的「碰」
+        function playHitSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.2);
+            gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.2);
+        }
+
+        // 3. 拋硬幣：高頻清脆金屬「叮」聲
+        function playCoinSound() {
+            initAudio();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(2000, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.6);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + 0.6);
+        }
+
+        // 4. 骰子：連續的喀喀聲
+        function playDiceSound() {
+            initAudio();
+            for(let i=0; i<3; i++) {
+                setTimeout(() => {
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300 + Math.random()*200, audioCtx.currentTime);
+                    gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.1);
+                }, i * 80);
+            }
+        }
+
+        // 讓網頁任意點擊時先初始化音效（破解瀏覽器自動靜音限制）
+        document.body.addEventListener('click', initAudio, { once: true });
+
+
+        // ==========================================
+        // UI 與遊戲邏輯
+        // ==========================================
+
+        // 🎲 骰子邏輯
+        const diceBtn = document.getElementById('dice-btn');
+        const diceResult = document.getElementById('dice-result');
+        const diceFaces = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
+        diceBtn.addEventListener('click', () => {
+            playDiceSound(); // 播放音效
+            diceResult.style.transform = 'rotate(360deg)';
+            setTimeout(() => {
+                const roll = Math.floor(Math.random() * 6);
+                diceResult.textContent = diceFaces[roll];
+                diceResult.style.transform = 'none';
+            }, 150);
+        });
+
+        // 🪙 硬幣邏輯
+        const coinBtn = document.getElementById('coin-btn');
+        const coinResult = document.getElementById('coin-result');
+        coinBtn.addEventListener('click', () => {
+            coinResult.textContent = '拋擲中...';
+            setTimeout(() => {
+                playCoinSound(); // 播放音效
+                const isHeads = Math.random() > 0.5;
+                coinResult.innerHTML = isHeads ? '🟡 <span style="color:#e1b12c;">正面</span>' : '⚪ <span style="color:#718093;">反面</span>';
+            }, 400);
+        });
+
+        // ⚙️ 連點器邏輯
+        let clickCount = 0; let autoClickerInterval = null;
+        const targetBtn = document.getElementById('target-btn'); const countDisplay = document.getElementById('click-count');
+        const startBtn = document.getElementById('start-btn'); const stopBtn = document.getElementById('stop-btn');
+        const intervalInput = document.getElementById('interval'); const statusText = document.getElementById('status-text');
+
+        targetBtn.addEventListener('click', () => {
+            clickCount++;
+            countDisplay.textContent = clickCount;
+        });
+
+        startBtn.addEventListener('click', () => {
+            const time = parseInt(intervalInput.value);
+            if (isNaN(time) || time < 1) return alert("請輸入有效數字！");
+            startBtn.disabled = true; stopBtn.disabled = false; intervalInput.disabled = true;
+            statusText.innerHTML = `狀態: ▶️ 連點中 (${time}ms/次)`;
+            statusText.style.color = '#28a745';
+            autoClickerInterval = setInterval(() => targetBtn.click(), time);
+        });
+
+        stopBtn.addEventListener('click', () => {
+            clearInterval(autoClickerInterval);
+            startBtn.disabled = false; stopBtn.disabled = true; intervalInput.disabled = false;
+            statusText.innerHTML = "狀態: ⏹ 停止中"; statusText.style.color = '#dc3545';
+        });
+
+        // 🫧 氣泡紙邏輯
+        const bubbleWrap = document.getElementById('bubble-wrap');
+        const resetBubbleBtn = document.getElementById('reset-bubble');
+        function createBubbles() {
+            bubbleWrap.innerHTML = '';
+            for (let i = 0; i < 15; i++) {
+                const bubble = document.createElement('div');
+                bubble.className = 'bubble';
+                bubble.addEventListener('mousedown', function() {
+                    if (!this.classList.contains('popped')) {
+                        playPopSound(); // 播放音效
+                        this.classList.add('popped');
+                    }
+                });
+                bubbleWrap.appendChild(bubble);
+            }
+        }
+        resetBubbleBtn.addEventListener('click', createBubbles);
+        createBubbles();
+
+        // 💢 壞心情消除器邏輯
+        const badMood = document.getElementById('bad-mood');
+        const gameArea = document.getElementById('game-area');
+        const scoreDisplay = document.getElementById('score');
+        let score = 0;
+
+        function moveBadMood() {
+            const maxX = gameArea.clientWidth - 50; 
+            const maxY = gameArea.clientHeight - 50;
+            badMood.style.left = Math.floor(Math.random() * maxX) + 'px';
+            badMood.style.top = Math.floor(Math.random() * maxY) + 'px';
+        }
+
+        badMood.addEventListener('mousedown', () => {
+            playHitSound(); // 播放音效
+            score++;
+            scoreDisplay.textContent = score;
+            badMood.textContent = '💥';
+            setTimeout(() => {
+                badMood.textContent = '😡';
+                moveBadMood();
+            }, 150);
+        });
+
+        setInterval(moveBadMood, 800);
+        moveBadMood();
+
+    </script>
+</body>
+</html>
